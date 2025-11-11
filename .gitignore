@@ -1,0 +1,128 @@
+.git
+projects/*
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Dependency directories
+node_modules/
+jspm_packages/
+bower_components
+web_modules/
+
+# Build outputs
+dist/
+build/
+.tmp/
+.cache/
+out/
+
+# IDE / Editor settings
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+.vscode-test
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.env.*.local
+.env.*
+!.env.example
+
+# Coverage
+coverage/
+.nyc_output/
+*.lcov
+lib-cov
+
+# Temporary files
+*.tmp
+*.temp
+
+# Optional caches
+.npm
+.pnpm-store
+.eslintcache
+.stylelintcache
+
+# Debugging artifacts
+*.tgz
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+.node_repl_history
+.yarn-integrity
+
+# Parcel cache
+.parcel-cache
+
+# Next.js build output
+.next
+
+# Nuxt.js build / generate output
+.nuxt
+
+# Gatsby files
+# .cache/ (already ignored above)
+# public (uncomment if needed)
+
+# VuePress build output
+.vuepress/dist
+.temp
+
+# SvelteKit cache directory
+.svelte-kit/
+
+# VitePress build and cache output
+**/.vitepress/dist
+**/.vitepress/cache
+
+# Docusaurus cache and generated files
+.docusaurus
+
+# Serverless directories
+.serverless/
+
+# FuseBox cache
+.fusebox/
+
+# DynamoDB Local files
+.dynamodb/
+
+# Firebase cache directory
+.firebase/
+
+# TernJS port file
+.tern-port
+
+# Yarn v3
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# Vite logs files
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+.git-*backup*
