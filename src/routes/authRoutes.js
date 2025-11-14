@@ -1,41 +1,22 @@
 import express from "express";
-import { registerSchema } from "../config/validator/userValidator.js";
 const userRouter = express.Router();
-import { z } from "zod";
+import {
+  registerUser,
+  loginUser,
+  getUserProfile,
+  forgotPassword,
+  resetPassword,
+} from "../controller/userController.js";
+import authenticateJWT from "../helper/authenticateJwt.js";
+import { createurl, redirectUrl } from "../controller/urlController.js";
 
-userRouter.post("/register", async (req, res) => {
-  // Validate request body
-  const result = registerSchema.safeParse(req.body);
-
-  if (!result.success) {
-    // Validation failed
-    const flattened = z.flattenError(result.error);
-    return res.status(400).json({
-      message: "Validation error",
-      errors: flattened.fieldErrors,
-    });
-
-
-  }
-  try {
-    const { email, username, password } = req.body;
-    const checkExistingUser = User.findOne({ email });
-    const checkExistingUsername = User.findOne({ username });
-    if (checkExistingUser) {
-      return res.status(400).json({ message: "User already exists" });
-    }
-    if (checkExistingUsername) {
-      return res.status(400).json({ message: "Username already taken" });
-    }
-    const newUser = new User({ email, username, password });
-    const newUserSaved = await newUser.save();
-    res.status(201).json({ message: "User registered successfully", data: newUserSaved });
-  } catch (error) {
-
-
-  }
-    
-})
-  
+userRouter.post("/register", authenticateJWT, registerUser);
+userRouter.post("/login", loginUser);
+userRouter.get("/protected", authenticateJWT, getUserProfile);
+userRouter.get("/profile", authenticateJWT, getUserProfile);
+userRouter.post("/forgotpassword", forgotPassword);
+userRouter.post("/resetpassword/:resetToken", resetPassword);
+userRouter.post("/create", createurl);
+userRouter.get("/:alias", redirectUrl);
 
 export default userRouter;

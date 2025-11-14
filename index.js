@@ -1,5 +1,9 @@
 import express from "express";
+import dotenv  from "dotenv"
+dotenv.config()
 import userRouter from "./src/routes/authRoutes.js";
+import connectDb from "./src/config/connectDb.js";
+connectDb();
 
 const app = express();
 
@@ -7,7 +11,9 @@ app.use(express.json());
 
 app.use("/api/users", userRouter);
 
+
 app.get("/", (req, res) => res.send("Hello From Your API"));
+
 
 app.use((err, req, res, next) => {
   console.error(err); // Log for debugging
