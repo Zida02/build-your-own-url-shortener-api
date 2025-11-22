@@ -28,7 +28,7 @@ const authenticateJWT = (req, res, next) => {
 
     next();
   } catch (err) {
-    console.error("JWT verification error:", err);
+    //console.error("JWT verification error:", err);
 
     if (err.name === "TokenExpiredError") {
       return res

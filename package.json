@@ -6,6 +6,7 @@
     "type": "module",
     "dependencies": {
         "argon2": "^0.44.0",
+        "dayjs": "^1.11.13",
         "dotenv": "^17.2.3",
         "express": "^4.19.2",
         "jsonwebtoken": "^9.0.2",

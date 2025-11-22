@@ -1,8 +1,10 @@
 import express from "express";
-import dotenv  from "dotenv"
-dotenv.config()
+import dotenv from "dotenv";
+dotenv.config();
 import userRouter from "./src/routes/authRoutes.js";
+import urlRouter from "./src/routes/urlRoutes.js";
 import connectDb from "./src/config/connectDb.js";
+import notificationRouter from "./src/routes/notificationRoutes.js";
 connectDb();
 
 const app = express();
@@ -10,19 +12,17 @@ const app = express();
 app.use(express.json());
 
 app.use("/api/users", userRouter);
-
-
+app.use("/api/url", urlRouter);
+app.use("/api/notifications", notificationRouter)
 app.get("/", (req, res) => res.send("Hello From Your API"));
 
-
-app.use((err, req, res, next) => {
-  console.error(err); // Log for debugging
-  res.status(err.status || 500).json({
-    message: err.message || "Internal server error",
+app.use((req, res, next) => {
+  const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  res.status(404).json({
+    message: "Route not found",
+    path: fullUrl,
   });
 });
-
-
 
 /**
  * Editing this line below will cause your code to break and not build successfully. Except you know what you're doing.
@@ -38,9 +38,6 @@ app.listen(process.env.PORT || 5050, process.env.HOST || "0.0.0.0", () => {
   );
 });
 // =============DO NOT EDIT HERE===========================================
-
-
-
 
 // Handle uncaught exceptions
 process.on("uncaughtException", (err) => {

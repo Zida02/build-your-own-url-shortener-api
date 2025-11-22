@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import { registerSchema, loginSchema } from "../validator/userValidator.js";
 import generateToken from "../helper/jwtHandler.js";
 
+// ****LOGIN USER   *****//
 export const loginUser = async (req, res) => {
   const result = loginSchema.safeParse(req.body);
 
@@ -42,7 +43,7 @@ export const loginUser = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
-    console.log(error);
+  
   }
 };
 
@@ -74,7 +75,7 @@ export const registerUser = async (req, res) => {
       .status(201)
       .json({ message: "User registered successfully", data: newUserSaved });
   } catch (error) {
-    console.error(error);
+    
   }
 };
 
@@ -99,11 +100,11 @@ export const updateUserProfile = async (req, res) => {
       });
     }
 
-    // update and return new document
+    
     const updatedUser = await User.findByIdAndUpdate(userId, updates, {
       new: true,
       runValidators: true,
-    }).select("-password"); // hide password field
+    }).select("-password");
 
     if (!updatedUser) {
       return res.status(404).json({ message: "User not found" });
@@ -114,22 +115,33 @@ export const updateUserProfile = async (req, res) => {
       data: updatedUser,
     });
   } catch (error) {
-    console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
 export const getUserProfile = async (req, res) => {
-  const { userId } = req.user;
+  const { userId, email } = req.user;
 
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     return res.status(400).json({ message: "Invalid user ID" });
   }
   try {
-    console.log("userId", userId);
+    const findUser = await User.findOne({ _id: userId });
+
+    if (!findUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({
+      status: "true",
+      message:" View  user  Profile",
+      data: findUser,
+    });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({
+      message: "error occured on  Get Profile",
+      status: "false",
+    });
   }
 };
 
@@ -148,7 +160,12 @@ export const forgotPassword = async (req, res) => {
       "host"
     )}/api/users/resetpassword/${resetToken}`;
     res.status(200).json({ message: "Password reset link sent", resetUrl });
-  } catch (error) {}
+  } catch (error) {
+    return res.status(500).json({
+      message: "error occured on Forgot Password",
+      status: "false",
+    });
+  }
 };
 
 export const resetPassword = async (req, res) => {
@@ -178,6 +195,9 @@ export const resetPassword = async (req, res) => {
       .status(200)
       .json({ message: "Password has been reset successfully" });
   } catch (error) {
-    console.error(error);
+    return res.status(500).json({
+      message: "error occured on Resetting  Password",
+      status: "false",
+    });
   }
 };

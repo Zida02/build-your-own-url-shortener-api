@@ -7,6 +7,11 @@ const urlSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User", // references the User model
+      required: true,
+    },
     alias: {
       type: String,
     },
@@ -24,7 +29,6 @@ const urlSchema = new mongoose.Schema(
     },
     clicks: {
       type: Number,
-    
     },
     createdAt: {
       type: Date,
@@ -32,7 +36,6 @@ const urlSchema = new mongoose.Schema(
     },
     expiresAt: {
       type: Date,
-     
     },
   },
   {
