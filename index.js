@@ -5,15 +5,16 @@ import userRouter from "./src/routes/authRoutes.js";
 import urlRouter from "./src/routes/urlRoutes.js";
 import connectDb from "./src/config/connectDb.js";
 import notificationRouter from "./src/routes/notificationRoutes.js";
+import { advancedSecurityMiddleware } from "./src/middleware/secure.js";
 connectDb();
 
 const app = express();
 
-app.use(express.json());
+advancedSecurityMiddleware(app);
 
 app.use("/api/users", userRouter);
 app.use("/api/url", urlRouter);
-app.use("/api/notifications", notificationRouter)
+app.use("/api/notifications", notificationRouter);
 app.get("/", (req, res) => res.send("Hello From Your API"));
 
 app.use((req, res, next) => {
