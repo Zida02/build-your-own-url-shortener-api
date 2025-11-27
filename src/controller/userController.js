@@ -6,8 +6,11 @@ import {
   registerSchema,
   loginSchema,
   updateUserProfileSchema,
+  UpdateUserSchema,
 } from "../validator/userValidator.js";
 import generateToken from "../helper/jwtHandler.js";
+import { sendMail } from "../utils/mail.js";
+import { getResetPasswordEmailTemplate } from "../utils/mailtemplate.js";
 
 // ****LOGIN USER   *****//
 export const loginUser = async (req, res) => {
@@ -50,6 +53,8 @@ export const loginUser = async (req, res) => {
   }
 };
 
+
+
 export const registerUser = async (req, res) => {
   const result = registerSchema.safeParse(req.body);
 
@@ -79,6 +84,9 @@ export const registerUser = async (req, res) => {
       .json({ message: "User registered successfully", data: newUserSaved });
   } catch (error) {}
 };
+
+
+
 
 export const updateUserProfile = async (req, res) => {
   const userId = req.user?.userId;
@@ -118,6 +126,10 @@ export const updateUserProfile = async (req, res) => {
   }
 };
 
+
+
+
+
 export const getUserProfile = async (req, res) => {
   const { userId, email } = req.user;
 
@@ -144,7 +156,108 @@ export const getUserProfile = async (req, res) => {
   }
 };
 
+
+
+
+// export const forgotPassword = async (req, res) => {
+  
+//   try {
+    
+//     const user = await User.findOne({ email: req.body.email });
+//     if (!user) {
+      
+//       return res.status(404).json({ message: "User not found" });
+//     }
+//     const resetToken = user.getResetPasswordToken();
+
+//     // 2. Create reset URL
+//     const resetUrl = `${req.protocol}://${req.get(
+//       "host"
+//     )}/api/users/resetpassword/${resetToken}`;
+
+//     // 3. Generate email template
+//     const html = getResetPasswordEmailTemplate(resetUrl, user);
+
+//     try {
+//       await sendMail(user.email, "Reset Your Password", html);
+//     } catch (emailError) {
+//       console.error("Email sending failed:", emailError);
+
+//       return res.status(500).json({
+//         message: "Password reset email failed to send",
+//         status: false,
+//       });
+//     }
+
+//     user.resetPasswordToken = resetToken;
+//     await user.save();
+
+//     return res.status(200).json({
+//       message: "Password reset link sent to email",
+//       status: true,
+//     });
+//   } catch (error) {
+//     console.error("Forgot Password Error:", error);
+//     return res.status(500).json({
+//       message: "Server error on forgot password",
+//       status: false,
+//     });
+//   }
+// };
+
+
 export const forgotPassword = async (req, res) => {
+
+ const result = UpdateUserSchema.safeParse(req.body);
+
+ if (!result.success) {
+   // Validation failed
+   const flattened = z.flattenError(result.error);
+   return res.status(400).json({
+     message: "Validation error",
+     errors: flattened.fieldErrors,
+   });
+ }
+  try {
+    // 1. Find the user
+    const user = await User.findOne({ email:result.data.email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found", status: false });
+    }
+
+    // 2. Generate reset token and assign to user
+    const resetToken = user.getResetPasswordToken();
+    user.resetPasswordToken = resetToken;
+    await user.save();
+
+    // 3. Create reset URL
+    const resetUrl = `${req.protocol}://${req.get(
+      "host"
+    )}/api/users/resetpassword/${resetToken}`;
+
+    // 4. Generate email template
+    const html = getResetPasswordEmailTemplate(resetUrl, user);
+
+    // 5. Send email
+    await sendMail(user.email, "Reset Your Password", html);
+
+    return res.status(200).json({
+      message: "Password reset link sent to email",
+      status: true,
+    });
+  } catch (error) {
+    //console.error("Forgot Password Error:", error);
+    return res.status(500).json({
+      message: "Server error on forgot password",
+      status: false,
+    });
+  }
+};
+
+
+
+
+export const forgotPassword2 = async (req, res) => {
   try {
     const findUser = await User.findOne({ email: req.body.email });
     if (!findUser) {
@@ -158,6 +271,7 @@ export const forgotPassword = async (req, res) => {
     const resetUrl = `${req.protocol}://${req.get(
       "host"
     )}/api/users/resetpassword/${resetToken}`;
+
     res.status(200).json({ message: "Password reset link sent", resetUrl });
   } catch (error) {
     return res.status(500).json({

@@ -36,3 +36,7 @@ export const updateUserProfileSchema = z
       .optional(),
   })
   .strict();
+
+export const UpdateUserSchema = z.object({
+  email: z.string("Email is required").email("invalid email address"),
+});
