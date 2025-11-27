@@ -16,3 +16,23 @@ export const loginSchema = z.object({
     .string("Password is required")
     .min(6, "password must be at least 6 characters long"),
 });
+
+export const updateUserProfileSchema = z
+  .object({
+    job: z.string().optional(),
+
+    address: z.string().optional(),
+    fullname: z.string().optional(),
+
+    age: z
+      .number()
+      .int()
+      .nonnegative("Age must be a positive number")
+      .optional(),
+
+    phoneNumber: z
+      .string()
+      .regex(/^[0-9+\-() ]*$/, "Invalid phone number")
+      .optional(),
+  })
+  .strict();

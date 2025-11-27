@@ -15,6 +15,6 @@ urlRouter.get("/urlClicks", authenticateJWT, getAllUrlsWithClicks);
 urlRouter.post("/create", authenticateJWT, createurl);
 urlRouter.get("/:alias", redirectUrl);
 urlRouter.get("/list/allclicks", authenticateJWT, listAllUrl);
-urlRouter.delete("/delete/:alias",  authenticateJWT,  deleteExpiredUrls)
+urlRouter.delete("/delete/:alias", authenticateJWT, deleteExpiredUrls);
 
 export default urlRouter;

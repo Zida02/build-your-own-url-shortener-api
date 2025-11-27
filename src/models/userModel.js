@@ -20,20 +20,41 @@ const userSchema = new mongoose.Schema(
         "Please fill a valid email address",
       ],
     },
+    fullname: {
+      type: String,
+      
+    },
     password: {
       type: String,
       required: [true, "Password is required"],
       minlength: [6, "Password must be at least 6 characters"],
-      
     },
     role: {
       type: String,
       enum: ["user", "admin"],
       default: "user",
     },
+    job: {
+      type: String,
+      default: "",
+    },
+
+    address: {
+      type: String,
+      default: "",
+    },
+    age: {
+      type: Number,
+      default: 0,
+    },
+    phoneNumber: {
+      type: String,
+      default: "",
+    },
     resetPasswordToken: String,
     resetPasswordExpire: Date,
   },
+
   {
     timestamps: true,
   }
@@ -43,14 +64,11 @@ const userSchema = new mongoose.Schema(
 // Hash password before save
 // ----------------------------
 
-
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   this.password = await argon2.hash(this.password);
   next();
 });
-
-
 
 userSchema.methods.getResetPasswordToken = function () {
   // Generate token

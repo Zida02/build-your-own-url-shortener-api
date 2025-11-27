@@ -2,7 +2,11 @@ import User from "../models/userModel.js";
 import { z } from "zod";
 import argon2 from "argon2";
 import mongoose from "mongoose";
-import { registerSchema, loginSchema } from "../validator/userValidator.js";
+import {
+  registerSchema,
+  loginSchema,
+  updateUserProfileSchema,
+} from "../validator/userValidator.js";
 import generateToken from "../helper/jwtHandler.js";
 
 // ****LOGIN USER   *****//
@@ -22,7 +26,7 @@ export const loginUser = async (req, res) => {
     const { email, password } = req.body;
     const checkExistingUser = await User.findOne({ email });
 
-    console.log("checkExistingUser", checkExistingUser.password);
+    //////////////////console.log("checkExistingUser", checkExistingUser.password);
     if (!checkExistingUser) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
@@ -43,7 +47,6 @@ export const loginUser = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
-  
   }
 };
 
@@ -74,13 +77,12 @@ export const registerUser = async (req, res) => {
     res
       .status(201)
       .json({ message: "User registered successfully", data: newUserSaved });
-  } catch (error) {
-    
-  }
+  } catch (error) {}
 };
 
 export const updateUserProfile = async (req, res) => {
-  const result = updateProfileSchema.safeParse(req.body);
+  const userId = req.user?.userId;
+  const result = updateUserProfileSchema.safeParse(req.body);
 
   if (!result.success) {
     const flattened = z.flattenError(result.error);
@@ -91,17 +93,13 @@ export const updateUserProfile = async (req, res) => {
   }
 
   try {
-    const userId = req.params.id; // or req.user.id if using auth middleware
-    const updates = req.body;
-
-    if (updates.password) {
+    if (result.data.password) {
       return res.status(400).json({
         message: "Use the password reset endpoint to change password",
       });
     }
 
-    
-    const updatedUser = await User.findByIdAndUpdate(userId, updates, {
+    const updatedUser = await User.findByIdAndUpdate(userId, result.data, {
       new: true,
       runValidators: true,
     }).select("-password");
@@ -115,6 +113,7 @@ export const updateUserProfile = async (req, res) => {
       data: updatedUser,
     });
   } catch (error) {
+    //////////////////console.log(error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -134,7 +133,7 @@ export const getUserProfile = async (req, res) => {
 
     return res.status(200).json({
       status: "true",
-      message:" View  user  Profile",
+      message: " View  user  Profile",
       data: findUser,
     });
   } catch (error) {
@@ -170,7 +169,7 @@ export const forgotPassword = async (req, res) => {
 
 export const resetPassword = async (req, res) => {
   const token = req.params.resetToken;
-  console.log("Reset token received:", token);
+  //////////////////console.log("Reset token received:", token);
   const { password } = req.body;
   try {
     const user = await User.findOne({
@@ -178,7 +177,7 @@ export const resetPassword = async (req, res) => {
       resetPasswordExpire: { $gt: Date.now() },
     });
 
-    console.log("user found for reset:", user);
+    //////////////////console.log("user found for reset:", user);
 
     if (!user) {
       return res.status(400).json({ message: "Invali3d or expired token" });

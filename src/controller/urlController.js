@@ -6,6 +6,8 @@ import Notification from "../models/notificationModel.js";
 import dayjs from "dayjs";
 import relativeTime from "../../node_modules/dayjs/plugin/relativeTime.js";
 import { sendNotification } from "./notificationController.js";
+import { checkTokenStatus } from "../helper/auth.js";
+
 
 dayjs.extend(relativeTime);
 
@@ -42,6 +44,7 @@ export const createurl = async (req, res) => {
         .status(400)
         .json({ message: "Password is required for protected links" });
     }
+
     const url = await Url.create({
       user: req.user.userId,
       originalUrl: result.data.originalUrl,
@@ -80,6 +83,8 @@ export const redirectUrl = async (req, res) => {
   try {
     const findAlias = await Url.findOne({ alias });
 
+    //console.log(findAlias);
+
     if (!findAlias) {
       return res.status(404).json({ message: "Link not found" });
     }
@@ -92,8 +97,49 @@ export const redirectUrl = async (req, res) => {
       if (findAlias.password !== password || !password) {
         return res.status(403).json({ message: "Password Required" });
       }
-      await urlCount(alias);
 
+      await urlCount(alias);
+      return res.redirect(findAlias.originalUrl);
+    }
+
+    // if (findAlias.linkType === "private") {
+    //   if (!req.user || !req.user.userId) {
+    //     return res.status(401).json({
+    //       message: "Login required to access this private link",
+    //       data: " redirecting to   Login Page ",
+    //     });
+    //   }
+    //   await urlCount(alias);
+    //   return res.redirect(findAlias.originalUrl);
+    // }
+
+
+    if (findAlias.linkType === "private") {
+      const tokenInfo = checkTokenStatus(req);
+
+      if (tokenInfo.status === "missing") {
+        return res.status(401).json({
+          message: "Login required to access this private link",
+        });
+      }
+
+      if (tokenInfo.status === "expired") {
+        return res.status(401).json({
+          message: "Session expired. Please login again.",
+        });
+      }
+
+      if (tokenInfo.status === "invalid") {
+        return res.status(403).json({
+          message: "Invalid token. Access denied.",
+        });
+      }
+
+      // token is valid
+      req.user = tokenInfo.user;
+
+      // continue with redirect
+      await urlCount(alias);
       return res.redirect(findAlias.originalUrl);
     }
 
@@ -118,7 +164,7 @@ export const urlCount = async (alias) => {
     );
 
     if (!updatedUrl) {
-      console.log("URL not found for alias:", alias);
+      //console.log("URL not found for alias:", alias);
       return null;
     }
     return updatedUrl;

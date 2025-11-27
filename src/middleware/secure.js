@@ -26,6 +26,11 @@ export const advancedSecurityMiddleware = (app) => {
           styleSrc: ["'self'", "'unsafe-inline'"],
           scriptSrc: ["'self'"],
           imgSrc: ["'self'", "data:", "https:"],
+          connectSrc: [
+            "'self'",
+            "http://localhost:5050",
+            "http://127.0.0.1:5050",
+          ], //
         },
       },
     })
@@ -40,7 +45,7 @@ export const advancedSecurityMiddleware = (app) => {
   app.use(
     cors({
       origin: process.env.ALLOWED_ORIGINS?.split(",") || [
-        "http://localhost:3000",
+        "http://localhost:5050",
       ],
       credentials: true,
       methods: ["GET", "POST", "PUT", "DELETE"],

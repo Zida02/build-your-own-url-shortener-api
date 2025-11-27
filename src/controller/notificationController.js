@@ -52,7 +52,7 @@ export const getUnreadNotification = async (req, res, next) => {
 
 export const getNotificationCount = async (req, res) => {
   const userId = req.user?.userId;
-  console.log(userId);
+
 
   if (!userId) {
     return res.status(401).json({ message: "Not authenticated" });

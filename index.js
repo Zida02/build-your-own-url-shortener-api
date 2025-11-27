@@ -5,17 +5,24 @@ import userRouter from "./src/routes/authRoutes.js";
 import urlRouter from "./src/routes/urlRoutes.js";
 import connectDb from "./src/config/connectDb.js";
 import notificationRouter from "./src/routes/notificationRoutes.js";
+import cors from "cors";
 import { advancedSecurityMiddleware } from "./src/middleware/secure.js";
+import { swaggerUiServe, swaggerUiSetup } from "./src/swagger/swagger.js";
+
 connectDb();
 
 const app = express();
 
 advancedSecurityMiddleware(app);
 
-app.use("/api/users", userRouter);
+app.use("/api-docs", swaggerUiServe, swaggerUiSetup);
+
+app.use("/api/auth", userRouter);
 app.use("/api/url", urlRouter);
 app.use("/api/notifications", notificationRouter);
+
 app.get("/", (req, res) => res.send("Hello From Your API"));
+
 
 app.use((req, res, next) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
