@@ -1,5 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
+import cookieParser from "cookie-parser";
 dotenv.config();
 import userRouter from "./src/routes/authRoutes.js";
 import urlRouter from "./src/routes/urlRoutes.js";
@@ -12,6 +13,7 @@ import { swaggerUiServe, swaggerUiSetup } from "./src/swagger/swagger.js";
 connectDb();
 
 const app = express();
+app.use(cookieParser());
 
 advancedSecurityMiddleware(app);
 
@@ -22,7 +24,6 @@ app.use("/api/url", urlRouter);
 app.use("/api/notifications", notificationRouter);
 
 app.get("/", (req, res) => res.send("Hello From Your API"));
-
 
 app.use((req, res, next) => {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;

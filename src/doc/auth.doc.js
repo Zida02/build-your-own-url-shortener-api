@@ -201,3 +201,21 @@
  *       500:
  *         description: Server error
  */
+
+
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     tags: 
+ *       - Authentication
+ *     summary: Logout user account
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *     responses:
+ *       200:
+ *         description: User logged out successfully
+ *       404:
+ *         description: User not found
+ */

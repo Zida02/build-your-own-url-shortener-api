@@ -2,6 +2,9 @@ import User from "../models/userModel.js";
 import { z } from "zod";
 import argon2 from "argon2";
 import mongoose from "mongoose";
+import jwt from "jsonwebtoken";
+import redisClient from "../helper/redis.js";
+
 import {
   registerSchema,
   loginSchema,
@@ -43,17 +46,22 @@ export const loginUser = async (req, res) => {
       email: checkExistingUser.email,
     });
 
+    res.cookie("token", token, {
+      httpOnly: true, // cannot be accessed by JS
+      secure: false, // send only over HTTPS
+      sameSite: "strict", // CSRF protection
+      maxAge: 60 * 60 * 1000, // 1 hour in milliseconds
+    });
+
     return res.status(200).json({
       message: "Login successful",
-      data: checkExistingUser,
+      data: checkExistingUser.email,
       token: token,
     });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
 };
-
-
 
 export const registerUser = async (req, res) => {
   const result = registerSchema.safeParse(req.body);
@@ -84,9 +92,6 @@ export const registerUser = async (req, res) => {
       .json({ message: "User registered successfully", data: newUserSaved });
   } catch (error) {}
 };
-
-
-
 
 export const updateUserProfile = async (req, res) => {
   const userId = req.user?.userId;
@@ -126,10 +131,6 @@ export const updateUserProfile = async (req, res) => {
   }
 };
 
-
-
-
-
 export const getUserProfile = async (req, res) => {
   const { userId, email } = req.user;
 
@@ -156,16 +157,13 @@ export const getUserProfile = async (req, res) => {
   }
 };
 
-
-
-
 // export const forgotPassword = async (req, res) => {
-  
+
 //   try {
-    
+
 //     const user = await User.findOne({ email: req.body.email });
 //     if (!user) {
-      
+
 //       return res.status(404).json({ message: "User not found" });
 //     }
 //     const resetToken = user.getResetPasswordToken();
@@ -205,22 +203,20 @@ export const getUserProfile = async (req, res) => {
 //   }
 // };
 
-
 export const forgotPassword = async (req, res) => {
+  const result = UpdateUserSchema.safeParse(req.body);
 
- const result = UpdateUserSchema.safeParse(req.body);
-
- if (!result.success) {
-   // Validation failed
-   const flattened = z.flattenError(result.error);
-   return res.status(400).json({
-     message: "Validation error",
-     errors: flattened.fieldErrors,
-   });
- }
+  if (!result.success) {
+    // Validation failed
+    const flattened = z.flattenError(result.error);
+    return res.status(400).json({
+      message: "Validation error",
+      errors: flattened.fieldErrors,
+    });
+  }
   try {
     // 1. Find the user
-    const user = await User.findOne({ email:result.data.email });
+    const user = await User.findOne({ email: result.data.email });
     if (!user) {
       return res.status(404).json({ message: "User not found", status: false });
     }
@@ -253,9 +249,6 @@ export const forgotPassword = async (req, res) => {
     });
   }
 };
-
-
-
 
 export const forgotPassword2 = async (req, res) => {
   try {
@@ -312,5 +305,42 @@ export const resetPassword = async (req, res) => {
       message: "error occured on Resetting  Password",
       status: "false",
     });
+  }
+};
+
+// const app = express();
+// const redisClient = new Redis({
+//   host: process.env.REDIS_HOST || "127.0.0.1",
+//   port: process.env.REDIS_PORT || 6379,
+// });
+
+// const TOKEN_EXPIRY = 60 * 60; // 1 hour in seconds
+
+export const logout = async (req, res) => {
+  const TOKEN_EXPIRY = 60 * 60;
+
+  try {
+    // Get token from Authorization header, custom header, or cookie
+    const token = req.headers.authorization?.startsWith("Bearer ")
+      ? req.headers.authorization.split(" ")[1]
+      : req.headers["x-token"] || req.cookies?.token;
+
+    if (!token) {
+      return res.status(401).json({ message: "No token provided" });
+    }
+
+    // Decode token to get expiration
+    const decoded = jwt.decode(token);
+    const ttl = decoded?.exp
+      ? decoded.exp - Math.floor(Date.now() / 1000)
+      : TOKEN_EXPIRY;
+
+    // Add token to Redis blacklist with TTL
+    await redisClient.set(token, "blacklisted", "EX", ttl);
+
+    res.json({ message: "Logged out successfully" });
+  } catch (err) {
+    console.error("Logout error:", err);
+    res.status(500).json({ message: "Logout failed" });
   }
 };

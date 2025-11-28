@@ -1,8 +1,9 @@
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import redisClient from "../helper/redis.js";
 dotenv.config();
 
-const authenticateJWT = (req, res, next) => {
+const authenticateJWT = async (req, res, next) => {
   try {
     // Check multiple sources for token
     let token = req.headers.authorization?.startsWith("Bearer ")
@@ -16,6 +17,16 @@ const authenticateJWT = (req, res, next) => {
         .json({ error: "Unauthorized: token not provided" });
     }
 
+    const isBlacklisted = await redisClient.get(token);
+    if (isBlacklisted) {
+      return res
+        .status(403)
+        .json({
+          error: "Token has been revoked. Please login again.",
+          status: false,
+        });
+    }
+
     const secret = process.env.JWT_SECRET;
     if (!secret) {
       console.error("JWT_SECRET not configured");
@@ -24,7 +35,7 @@ const authenticateJWT = (req, res, next) => {
 
     const decoded = jwt.verify(token, secret);
     req.user = decoded;
-  //  console.log("Decoded JWT payload:", decoded); // { userId, role, tenantId, tenantName }
+    //  console.log("Decoded JWT payload:", decoded); // { userId, role, tenantId, tenantName }
 
     next();
   } catch (err) {
