@@ -7,7 +7,8 @@ import dayjs from "dayjs";
 import relativeTime from "../../node_modules/dayjs/plugin/relativeTime.js";
 import { sendNotification } from "./notificationController.js";
 import { checkTokenStatus } from "../helper/auth.js";
-
+import { ErrorCodes } from "../utils/errorType.js";
+import AppError from "../utils/AppError.js";
 
 dayjs.extend(relativeTime);
 
@@ -18,7 +19,15 @@ export const createurl = async (req, res) => {
   const userId = req.user?.userId;
 
   if (!userId) {
-    return res.status(401).json({ message: "Not authenticated" });
+    //return res.status(401).json({ message: "Not authenticated" });
+
+    return next(
+      new AppError(
+        "You must be authenticated to create a URL",
+        401,
+        ErrorCodes.AUTH_REQUIRED
+      )
+    );
   }
 
   if (!result.success) {
@@ -33,9 +42,12 @@ export const createurl = async (req, res) => {
     if (result.data.alias) {
       const checkAlias = await Url.findOne({ alias: result.data.alias });
       if (checkAlias) {
-        return res.status(404).json({
-          message: "alias must be unique",
-        });
+        // return res.status(404).json({
+        //   message: "alias must be unique",
+        // });
+        return next(
+          new AppError("alias must be unique", 401, ErrorCodes.AUTH_REQUIRED)
+        );
       }
     }
 
@@ -67,35 +79,44 @@ export const createurl = async (req, res) => {
       //sendNotificationdata,
     });
   } catch (error) {
-    return res.status(500).json({
-      message: "error occured on creating Short Url",
-      status: "false",
-      error: error,
-    });
+    // return res.status(500).json({
+    //   message: "error occured on creating Short Url",
+    //   status: "false",
+    //   error: error,
+    // });
   }
 };
 
 // REDIRECT URL
 
-export const redirectUrl = async (req, res) => {
+export const redirectUrl = async (req, res, next) => {
   const { alias } = req.params;
 
   try {
     const findAlias = await Url.findOne({ alias });
 
-    //console.log(findAlias);
+//    console.log(findAlias);
 
     if (!findAlias) {
-      return res.status(404).json({ message: "Link not found" });
+      // return res.status(404).json({ message: "Link not found" });
+
+      return next(
+        new AppError("LINK NOT FOUND", 401, ErrorCodes.LINK_NOT_FOUND)
+      );
     }
     if (findAlias.expiresAt && new Date() > findAlias.expiresAt) {
-      return res.status(410).json({ message: "Link has expired" });
+      //return res.status(410).json({ message: "Link has expired" });
+
+      return next(new AppError("LINK EXPIRED", 401, ErrorCodes.LINK_EXPIRED));
     }
 
     if (findAlias.linkType === "protected") {
       const { password } = req.body;
       if (findAlias.password !== password || !password) {
-        return res.status(403).json({ message: "Password Required" });
+        return next(
+          new AppError("INVALID PASSWORD ", 401, ErrorCodes.INVALID_INPUT)
+        );
+        //return res.status(403).json({ message: "Password Required" });
       }
 
       await urlCount(alias);
@@ -112,7 +133,6 @@ export const redirectUrl = async (req, res) => {
     //   await urlCount(alias);
     //   return res.redirect(findAlias.originalUrl);
     // }
-
 
     if (findAlias.linkType === "private") {
       const tokenInfo = checkTokenStatus(req);
@@ -146,11 +166,21 @@ export const redirectUrl = async (req, res) => {
     await urlCount(alias);
 
     return res.redirect(findAlias.originalUrl);
-  } catch (error) {
-    return res.status(500).json({
-      message: "error occured on  redirecting Url",
-      status: "false",
-    });
+  } catch (err) {
+    // return res.status(500).json({
+    //   message: "error occured on  redirecting Url",
+    //   status: "false",
+    // });
+
+    if (!(err instanceof AppError)) {
+      err = new AppError(
+        err.message || "Something went wrong",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+        false
+      );
+    }
+    next(err);
   }
 };
 
@@ -176,46 +206,54 @@ export const urlCount = async (alias) => {
   }
 };
 
-export const getAllUrlsWithClicks = async (req, res) => {
+export const getAllUrlsWithClicks = async (req, res, next) => {
   const userId = req.user?.userId;
 
-  if (!userId) {
-    return res.status(401).json({ message: "Not authenticated" });
-  }
+  // if (!userId) {
+  //   return res.status(401).json({ message: "Not authenticated" });
+  // }
 
-  // Validate MongoDB ObjectId
-  if (!mongoose.Types.ObjectId.isValid(userId)) {
-    return res.status(400).json({ message: "Invalid user ID" });
-  }
+  // // Validate MongoDB ObjectId
+  // if (!mongoose.Types.ObjectId.isValid(userId)) {
+  //   return res.status(400).json({ message: "Invalid user ID" });
+  // }
   try {
     const urls = await Url.find(
       { user: userId },
       { originalUrl: 1, newUrl: 1, clicks: 1, _id: 0 }
     )
       .sort({ clicks: -1 })
-      .limit(5); // optional: sort by clicks descending
-
+      .limit(5);
     return res.status(200).json({ data: urls });
-  } catch (error) {
-    return res.status(500).json({
-      message: "error occured on  getAllUrl  with ClickCount",
-      status: "false",
-      error: error,
-    });
+  } catch (err) {
+    // return res.status(500).json({
+    //   message: "error occured on  getAllUrl  with ClickCount",
+    //   status: "false",
+    //   error: error,
+    // });
+    if (!(err instanceof AppError)) {
+      err = new AppError(
+        err.message || "Something went wrong",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+        false
+      );
+    }
+    next(err);
   }
 };
 
-export const listAllUrls = async (req, res) => {
+export const listAllUrls = async (req, res, next) => {
   const userId = req.user?.userId;
 
-  if (!userId) {
-    return res.status(401).json({ message: "Not authenticated" });
-  }
+  // if (!userId) {
+  //   return res.status(401).json({ message: "Not authenticated" });
+  // }
 
-  // Validate MongoDB ObjectId
-  if (!mongoose.Types.ObjectId.isValid(userId)) {
-    return res.status(400).json({ message: "Invalid user ID" });
-  }
+  // // Validate MongoDB ObjectId
+  // if (!mongoose.Types.ObjectId.isValid(userId)) {
+  //   return res.status(400).json({ message: "Invalid user ID" });
+  // }
   try {
     const urls = await Url.find(
       { user: userId },
@@ -233,7 +271,7 @@ export const listAllUrls = async (req, res) => {
 
     const result = urls.map((url) => {
       const now = new Date();
-      const createdAgo = dayjs(url.createdAt).fromNow(); // e.g., "2 days ago"
+      const createdAgo = dayjs(url.createdAt).fromNow();
 
       let expiresIn = null;
       let expired = false;
@@ -262,16 +300,25 @@ export const listAllUrls = async (req, res) => {
     });
 
     return res.status(200).json({ data: result });
-  } catch (error) {
-    return res.status(500).json({
-      message: "error occured on list Urls",
-      status: "false",
-      error,
-    });
+  } catch (err) {
+    // return res.status(500).json({
+    //   message: "error occured on list Urls",
+    //   status: "false",
+    //   error,
+    // });
+    if (!(err instanceof AppError)) {
+      err = new AppError(
+        err.message || "Something went wrong",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+        false
+      );
+    }
+    next(err);
   }
 };
 
-export const deleteExpiredUrls = async (req, res) => {
+export const deleteExpiredUrls = async (req, res, next) => {
   const alias = req.params.alias;
   const userId = req.user?.userId;
 
@@ -298,11 +345,20 @@ export const deleteExpiredUrls = async (req, res) => {
       message: "Expired Url Deleted",
       status: "true",
     });
-  } catch (error) {
-    return res.status(500).json({
-      message: "error occured on Delecting Url",
-      status: "false",
-    });
+  } catch (err) {
+    // return res.status(500).json({
+    //   message: "error occured on Delecting Url",
+    //   status: "false",
+    // });
+    if (!(err instanceof AppError)) {
+      err = new AppError(
+        err.message || "Something went wrong",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+        false
+      );
+    }
+    next(err);
   }
 };
 
@@ -337,16 +393,16 @@ export const deleteExpiredUrls = async (req, res) => {
 //   }
 // };
 
-export const listAllUrl = async (req, res) => {
+export const listAllUrl = async (req, res, next) => {
   const userId = req.user?.userId;
 
-  if (!userId) {
-    return res.status(401).json({ message: "Not authenticated" });
-  }
+  // if (!userId) {
+  //   return res.status(401).json({ message: "Not authenticated" });
+  // }
 
-  if (!mongoose.Types.ObjectId.isValid(userId)) {
-    return res.status(400).json({ message: "Invalid user ID" });
-  }
+  // if (!mongoose.Types.ObjectId.isValid(userId)) {
+  //   return res.status(400).json({ message: "Invalid user ID" });
+  // }
 
   try {
     const urls = await Url.find(
@@ -420,11 +476,20 @@ export const listAllUrl = async (req, res) => {
     });
 
     return res.status(200).json({ data: result });
-  } catch (error) {
-    return res.status(500).json({
-      message: "Error occurred while listing URLs",
-      status: false,
-      error,
-    });
+  } catch (err) {
+    // return res.status(500).json({
+    //   message: "Error occurred while listing URLs",
+    //   status: false,
+    //   error,
+    // });
+    if (!(err instanceof AppError)) {
+      err = new AppError(
+        err.message || "Something went wrong",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+        false
+      );
+    }
+    next(err);
   }
 };

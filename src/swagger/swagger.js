@@ -1,10 +1,32 @@
 import swaggerJSDoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
 import path from "path";
+import dotenv from "dotenv";
+
+const env = process.env.NODE_ENV || "development";
+dotenv.config({
+  path: `.env.${env}`,
+});
+
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const servers = [
+  {
+    url: process.env.SERVER_URL || "http://127.0.0.1:5050",
+    description: "Local development server",
+  },
+  {
+    url: process.env.STAGING_SERVER_URL || "https://staging.api.yourdomain.com",
+    description: "Staging server",
+  },
+  {
+    url: process.env.PROD_SERVER_URL || "https://api.yourdomain.com",
+    description: "Production server",
+  },
+];
 
 const options = {
   definition: {
@@ -28,12 +50,14 @@ const options = {
       },
     },
 
-    servers: [
-      {
-        url: "http://127.0.0.1:5050",
-        description: "Local server",
-      },
-    ],
+    servers,
+
+    // servers: [
+    //   {
+    //     url: "http://127.0.0.1:5050",
+    //     description: "Local server",
+    //   },
+    // ],
 
     components: {
       securitySchemes: {

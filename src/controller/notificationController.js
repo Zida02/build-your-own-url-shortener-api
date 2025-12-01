@@ -24,13 +24,13 @@ export const sendNotification = async ({
 export const getUnreadNotification = async (req, res, next) => {
   const userId = req.user?.userId;
 
-  if (!userId) {
-    return res.status(401).json({ message: "Not authenticated" });
-  }
+  // if (!userId) {
+  //   return res.status(401).json({ message: "Not authenticated" });
+  // }
 
-  if (!mongoose.Types.ObjectId.isValid(userId)) {
-    return res.status(400).json({ message: "Invalid user ID" });
-  }
+  // if (!mongoose.Types.ObjectId.isValid(userId)) {
+  //   return res.status(400).json({ message: "Invalid user ID" });
+  // }
 
   try {
     const getUnreadNotification = await Notification.find({
@@ -42,25 +42,34 @@ export const getUnreadNotification = async (req, res, next) => {
       status: true,
       data: getUnreadNotification,
     });
-  } catch (error) {
-    return res.status(500).json({
-      message: "Error occured on Unread Notification",
-      status: false,
-    });
+  } catch (err) {
+    // return res.status(500).json({
+    //   message: "Error occured on Unread Notification",
+    //   status: false,
+    // });
+
+    if (!(err instanceof AppError)) {
+      err = new AppError(
+        err.message || "Something went wrong",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+        false
+      );
+    }
+    next(err);
   }
 };
 
-export const getNotificationCount = async (req, res) => {
+export const getNotificationCount = async (req, res, next) => {
   const userId = req.user?.userId;
 
+  // if (!userId) {
+  //   return res.status(401).json({ message: "Not authenticated" });
+  // }
 
-  if (!userId) {
-    return res.status(401).json({ message: "Not authenticated" });
-  }
-
-  if (!mongoose.Types.ObjectId.isValid(userId)) {
-    return res.status(400).json({ message: "Invalid user ID" });
-  }
+  // if (!mongoose.Types.ObjectId.isValid(userId)) {
+  //   return res.status(400).json({ message: "Invalid user ID" });
+  // }
 
   try {
     const getNotificationCount = await Notification.countDocuments({
@@ -70,24 +79,33 @@ export const getNotificationCount = async (req, res) => {
       message: "Total notification count retrieved",
       totalCount: getNotificationCount,
     });
-  } catch (error) {
-    return res.status(500).json({
-      message: "Error occured on Notification Count",
-      status: false,
-    });
+  } catch (err) {
+    // return res.status(500).json({
+    //   message: "Error occured on Notification Count",
+    //   status: false,
+    // });
+    if (!(err instanceof AppError)) {
+      err = new AppError(
+        err.message || "Something went wrong",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+        false
+      );
+    }
+    next(err);
   }
 };
 
-export const getreadNotification = async (req, res) => {
+export const getreadNotification = async (req, res, next) => {
   const userId = req.user?.userId;
 
-  if (!userId) {
-    return res.status(401).json({ message: "Not authenticated" });
-  }
+  // if (!userId) {
+  //   return res.status(401).json({ message: "Not authenticated" });
+  // }
 
-  if (!mongoose.Types.ObjectId.isValid(userId)) {
-    return res.status(400).json({ message: "Invalid user ID" });
-  }
+  // if (!mongoose.Types.ObjectId.isValid(userId)) {
+  //   return res.status(400).json({ message: "Invalid user ID" });
+  // }
 
   try {
     const getreadNotification = await Notification.find({
@@ -99,30 +117,39 @@ export const getreadNotification = async (req, res) => {
       status: true,
       data: getreadNotification,
     });
-  } catch (error) {
-    return res.status(500).json({
-      message: "Error occured on read  Notification   ",
-      status: false,
-    });
+  } catch (err) {
+    // return res.status(500).json({
+    //   message: "Error occured on read  Notification   ",
+    //   status: false,
+    // });
+    if (!(err instanceof AppError)) {
+      err = new AppError(
+        err.message || "Something went wrong",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+        false
+      );
+    }
+    next(err);
   }
 };
 
-export const updateNotificationReadUnread = async (req, res) => {
+export const updateNotificationReadUnread = async (req, res, next) => {
   try {
     const { notificationId } = req.params;
     const { isRead } = req.body;
-    console.log(notificationId);
+    //console.log(notificationId);
 
     const userId = req.user?.userId;
-    console.log(userId);
+    // console.log(userId);
 
-    if (!userId) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
+    // if (!userId) {
+    //   return res.status(401).json({ message: "Not authenticated" });
+    // }
 
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({ message: "Invalid user ID" });
-    }
+    // if (!mongoose.Types.ObjectId.isValid(userId)) {
+    //   return res.status(400).json({ message: "Invalid user ID" });
+    // }
 
     // Validate input
     if (typeof isRead !== "boolean") {
@@ -138,9 +165,9 @@ export const updateNotificationReadUnread = async (req, res) => {
     });
 
     if (!notification) {
-      return res.status(404).json({
-        message: "Notification not found",
-      });
+      // return res.status(404).json({
+      //   message: "Notification not found",
+      // });
     }
 
     // Update read/unread status
@@ -151,26 +178,35 @@ export const updateNotificationReadUnread = async (req, res) => {
       message: `Notification marked as ${isRead ? "read" : "unread"}`,
       data: notification,
     });
-  } catch (error) {
-    return res.status(500).json({
-      message: "Error updating notification status",
-      error: error.message,
-    });
+  } catch (err) {
+    // return res.status(500).json({
+    //   message: "Error updating notification status",
+    //   error: error.message,
+    // });
+    if (!(err instanceof AppError)) {
+      err = new AppError(
+        err.message || "Something went wrong",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+        false
+      );
+    }
+    next(err);
   }
 };
 
- export  const deleteAllNotification = async (req, res) => {
+export const deleteAllNotification = async (req, res) => {
   try {
     const userId = req.user?.userId;
-    console.log(userId);
+    // console.log(userId);
 
-    if (!userId) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
+    // if (!userId) {
+    //   return res.status(401).json({ message: "Not authenticated" });
+    // }
 
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({ message: "Invalid user ID" });
-    }
+    // if (!mongoose.Types.ObjectId.isValid(userId)) {
+    //   return res.status(400).json({ message: "Invalid user ID" });
+    // }
 
     const notification = await Notification.deleteMany({
       user: userId,
@@ -181,9 +217,18 @@ export const updateNotificationReadUnread = async (req, res) => {
       deletedCount: notification.deletedCount,
     });
   } catch (error) {
-    return res.status(500).json({
-      message: "Error deleting  all notifications",
-      error: error.message,
-    });
+    // return res.status(500).json({
+    //   message: "Error deleting  all notifications",
+    //   error: error.message,
+    // });
+    if (!(err instanceof AppError)) {
+      err = new AppError(
+        err.message || "Something went wrong",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+        false
+      );
+    }
+    next(err);
   }
 };

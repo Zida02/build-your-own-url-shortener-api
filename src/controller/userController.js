@@ -4,6 +4,7 @@ import argon2 from "argon2";
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import redisClient from "../helper/redis.js";
+import logger from "../utils/logger.js";
 
 import {
   registerSchema,
@@ -12,11 +13,13 @@ import {
   UpdateUserSchema,
 } from "../validator/userValidator.js";
 import generateToken from "../helper/jwtHandler.js";
-import { sendMail } from "../utils/mail.js";
-import { getResetPasswordEmailTemplate } from "../utils/mailtemplate.js";
+import { sendMail } from "../helper/mail.js";
+import { getResetPasswordEmailTemplate } from "../helper/mailtemplate.js";
+import AppError from "../utils/AppError.js";
+import { ErrorCodes } from "../utils/errorType.js";
 
 // ****LOGIN USER   *****//
-export const loginUser = async (req, res) => {
+export const loginUser = async (req, res, next) => {
   const result = loginSchema.safeParse(req.body);
 
   if (!result.success) {
@@ -34,22 +37,39 @@ export const loginUser = async (req, res) => {
 
     //////////////////console.log("checkExistingUser", checkExistingUser.password);
     if (!checkExistingUser) {
-      return res.status(400).json({ message: "Invalid email or password" });
+      //return res.status(400).json({ message: "Invalid email or password" });
+      throw new AppError(
+        "Invalid email or password",
+        404,
+        ErrorCodes.USER_NOT_FOUND
+      );
     }
     const isMatch = await argon2.verify(checkExistingUser.password, password);
 
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid email or password" });
+      //return res.status(400).json({ message: "Invalid email or password" });
+      throw new AppError(
+        "Invalid email or password",
+        400,
+        ErrorCodes.INVALID_INPUT
+      );
     }
     const token = generateToken({
       userId: checkExistingUser._id,
       email: checkExistingUser.email,
     });
-
+    // Log successful login
+    logger.info("User logged in", {
+      email: checkExistingUser.email,
+      userId: checkExistingUser._id.toString(),
+      // correlationId: req.correlationId,
+      method: req.method,
+      path: req.originalUrl,
+    });
     res.cookie("token", token, {
-      httpOnly: true, // cannot be accessed by JS
-      secure: false, // send only over HTTPS
-      sameSite: "strict", // CSRF protection
+      httpOnly: true,
+      secure: false, // chanage to true
+      sameSite: "strict",
       maxAge: 60 * 60 * 1000, // 1 hour in milliseconds
     });
 
@@ -58,8 +78,17 @@ export const loginUser = async (req, res) => {
       data: checkExistingUser.email,
       token: token,
     });
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
+  } catch (err) {
+    // res.status(500).json({ message: "Server error" });
+    if (!(err instanceof AppError)) {
+      err = new AppError(
+        err.message || "Something went wrong",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+        false
+      );
+    }
+    next(err);
   }
 };
 
@@ -78,19 +107,41 @@ export const registerUser = async (req, res) => {
     const { email, username, password } = req.body;
     const checkExistingUser = await User.findOne({ email });
     if (checkExistingUser) {
-      return res.status(400).json({ message: "User already exists" });
+      // return res.status(400).json({ message: "User already exists" });
+      throw new AppError(
+        "User Already Exit",
+        404,
+        ErrorCodes.DUPLICATE_RESOURCE
+      );
     }
     const checkExistingUsername = await User.findOne({ username });
 
     if (checkExistingUsername) {
-      return res.status(400).json({ message: "Username already taken" });
+      //return res.status(400).json({ message: "Username already taken" });
+      throw new AppError(
+        "User Already Exit",
+        404,
+        ErrorCodes.DUPLICATE_RESOURCE
+      );
     }
     const newUser = new User({ email, username, password });
     const newUserSaved = await newUser.save();
     res
       .status(201)
       .json({ message: "User registered successfully", data: newUserSaved });
-  } catch (error) {}
+  } catch (err) {
+    // res.status(500).json({ message: "Server error" });
+    // Wrap unknown errors into AppError and pass to global handler
+    if (!(err instanceof AppError)) {
+      err = new AppError(
+        err.message || "Something went wrong",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+        false
+      );
+    }
+    next(err);
+  }
 };
 
 export const updateUserProfile = async (req, res) => {
@@ -107,7 +158,7 @@ export const updateUserProfile = async (req, res) => {
 
   try {
     if (result.data.password) {
-      return res.status(400).json({
+      return res.status(200).json({
         message: "Use the password reset endpoint to change password",
       });
     }
@@ -118,30 +169,49 @@ export const updateUserProfile = async (req, res) => {
     }).select("-password");
 
     if (!updatedUser) {
-      return res.status(404).json({ message: "User not found" });
+      //return res.status(404).json({ message: "User not found" });
+      throw new AppError("User not Found", 404, ErrorCodes.USER_NOT_FOUND);
     }
 
-    res.status(200).json({
+    logger.info("User Profile Updated", {
+      email: checkExistingUser.email,
+      userId: checkExistingUser._id.toString(),
+      correlationId: req.correlationId,
+     // method: req.method,
+      path: req.originalUrl,
+    });
+    return res.status(200).json({
       message: "Profile updated successfully",
       data: updatedUser,
     });
   } catch (error) {
     //////////////////console.log(error);
-    res.status(500).json({ message: "Server error" });
+    // res.status(500).json({ message: "Server error" });
+    if (!(err instanceof AppError)) {
+      err = new AppError(
+        err.message || "Something went wrong",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+        false
+      );
+    }
+    next(err);
   }
 };
 
 export const getUserProfile = async (req, res) => {
-  const { userId, email } = req.user;
+  const { userId } = req.user;
 
-  if (!mongoose.Types.ObjectId.isValid(userId)) {
-    return res.status(400).json({ message: "Invalid user ID" });
-  }
+  // if (!mongoose.Types.ObjectId.isValid(userId)) {
+  //   return res.status(400).json({ message: "Invalid user ID" });
+  // }
+
   try {
     const findUser = await User.findOne({ _id: userId });
 
     if (!findUser) {
-      return res.status(404).json({ message: "User not found" });
+      //return res.status(404).json({ message: "User not found" });
+      throw new AppError("User not Found", 404, ErrorCodes.USER_NOT_FOUND);
     }
 
     return res.status(200).json({
@@ -150,10 +220,19 @@ export const getUserProfile = async (req, res) => {
       data: findUser,
     });
   } catch (error) {
-    return res.status(500).json({
-      message: "error occured on  Get Profile",
-      status: "false",
-    });
+    // return res.status(500).json({
+    //   message: "error occured on  Get Profile",
+    //   status: "false",
+    // });
+    if (!(err instanceof AppError)) {
+      err = new AppError(
+        err.message || "Something went wrong",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+        false
+      );
+    }
+    next(err);
   }
 };
 
@@ -218,7 +297,9 @@ export const forgotPassword = async (req, res) => {
     // 1. Find the user
     const user = await User.findOne({ email: result.data.email });
     if (!user) {
-      return res.status(404).json({ message: "User not found", status: false });
+      throw new AppError("User not Found", 404, ErrorCodes.USER_NOT_FOUND);
+
+      //return res.status(404).json({ message: "User not found", status: false });
     }
 
     // 2. Generate reset token and assign to user
@@ -243,14 +324,23 @@ export const forgotPassword = async (req, res) => {
     });
   } catch (error) {
     //console.error("Forgot Password Error:", error);
-    return res.status(500).json({
-      message: "Server error on forgot password",
-      status: false,
-    });
+    // return res.status(500).json({
+    //   message: "Server error on forgot password",
+    //   status: false,
+    // });
+    if (!(err instanceof AppError)) {
+      err = new AppError(
+        err.message || "Something went wrong",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+        false
+      );
+    }
+    next(err);
   }
 };
 
-export const forgotPassword2 = async (req, res) => {
+export const forgotPassword2 = async (req, res, next) => {
   try {
     const findUser = await User.findOne({ email: req.body.email });
     if (!findUser) {
@@ -267,10 +357,19 @@ export const forgotPassword2 = async (req, res) => {
 
     res.status(200).json({ message: "Password reset link sent", resetUrl });
   } catch (error) {
-    return res.status(500).json({
-      message: "error occured on Forgot Password",
-      status: "false",
-    });
+    // return res.status(500).json({
+    //   message: "error occured on Forgot Password",
+    //   status: "false",
+    // });
+    if (!(err instanceof AppError)) {
+      err = new AppError(
+        err.message || "Something went wrong",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+        false
+      );
+    }
+    next(err);
   }
 };
 
@@ -287,7 +386,13 @@ export const resetPassword = async (req, res) => {
     //////////////////console.log("user found for reset:", user);
 
     if (!user) {
-      return res.status(400).json({ message: "Invali3d or expired token" });
+      throw new AppError(
+        "Invalid or  expired Token",
+        404,
+        ErrorCodes.RESET_TOKEN_EXPIRED
+      );
+
+      //return res.status(400).json({ message: "Invali3d or expired token" });
     }
 
     // Set new password
@@ -300,11 +405,21 @@ export const resetPassword = async (req, res) => {
     return res
       .status(200)
       .json({ message: "Password has been reset successfully" });
-  } catch (error) {
-    return res.status(500).json({
-      message: "error occured on Resetting  Password",
-      status: "false",
-    });
+  } catch (err) {
+    // return res.status(500).json({
+    //   message: "error occured on Resetting  Password",
+    //   status: "false",
+    // });
+
+    if (!(err instanceof AppError)) {
+      err = new AppError(
+        err.message || "Something went wrong",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+        false
+      );
+    }
+    next(err);
   }
 };
 
@@ -326,7 +441,8 @@ export const logout = async (req, res) => {
       : req.headers["x-token"] || req.cookies?.token;
 
     if (!token) {
-      return res.status(401).json({ message: "No token provided" });
+      throw new AppError("No  Token Provided", 404, ErrorCodes.TOKEN_NOT_FOUND);
+      //return res.status(401).json({ message: "No token provided" });
     }
 
     // Decode token to get expiration
@@ -338,9 +454,18 @@ export const logout = async (req, res) => {
     // Add token to Redis blacklist with TTL
     await redisClient.set(token, "blacklisted", "EX", ttl);
 
-    res.json({ message: "Logged out successfully" });
+    return res.json({ message: "Logged out successfully" });
   } catch (err) {
-    console.error("Logout error:", err);
-    res.status(500).json({ message: "Logout failed" });
+    // console.error("Logout error:", err);
+    // res.status(500).json({ message: "Logout failed" });
+    if (!(err instanceof AppError)) {
+      err = new AppError(
+        err.message || "Something went wrong",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+        false
+      );
+    }
+    next(err);
   }
 };

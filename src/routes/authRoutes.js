@@ -16,7 +16,7 @@ import authenticateJWT from "../helper/authenticateJwt.js";
 
 
 
-userRouter.post("/register",  registerUser);
+userRouter.post("/register", registerUser);
 userRouter.post("/login", loginUser);
 userRouter.get("/profile", authenticateJWT, getUserProfile);
 userRouter.post("/forgotpassword", forgotPassword);
