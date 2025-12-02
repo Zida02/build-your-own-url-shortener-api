@@ -174,10 +174,10 @@ export const updateUserProfile = async (req, res) => {
     }
 
     logger.info("User Profile Updated", {
-      email: checkExistingUser.email,
-      userId: checkExistingUser._id.toString(),
-      correlationId: req.correlationId,
-     // method: req.method,
+      email: updatedUser.email,
+      userId: updatedUser._id.toString(),
+      //correlationId: req.correlationId,
+      method: req.method,
       path: req.originalUrl,
     });
     return res.status(200).json({
@@ -344,7 +344,8 @@ export const forgotPassword2 = async (req, res, next) => {
   try {
     const findUser = await User.findOne({ email: req.body.email });
     if (!findUser) {
-      return res.status(404).json({ message: "User not Found" });
+      //return res.status(404).json({ message: "User not Found" });
+      throw new AppError("User not Found", 404, ErrorCodes.USER_NOT_FOUND);
     }
     const resetToken = findUser.getResetPasswordToken();
     findUser.resetPasswordToken = resetToken;
@@ -431,7 +432,7 @@ export const resetPassword = async (req, res) => {
 
 // const TOKEN_EXPIRY = 60 * 60; // 1 hour in seconds
 
-export const logout = async (req, res) => {
+export const logout = async (req, res, next) => {
   const TOKEN_EXPIRY = 60 * 60;
 
   try {
@@ -447,12 +448,12 @@ export const logout = async (req, res) => {
 
     // Decode token to get expiration
     const decoded = jwt.decode(token);
-    const ttl = decoded?.exp
-      ? decoded.exp - Math.floor(Date.now() / 1000)
-      : TOKEN_EXPIRY;
+    if (!decoded) {
+      throw new AppError("Invalid Token", 401, ErrorCodes.INVALID_TOKEN);
+    }
 
     // Add token to Redis blacklist with TTL
-    await redisClient.set(token, "blacklisted", "EX", ttl);
+    await redisClient.set(token, "blacklisted", "EX", TOKEN_EXPIRY);
 
     return res.json({ message: "Logged out successfully" });
   } catch (err) {

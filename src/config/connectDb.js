@@ -1,13 +1,18 @@
 import mongoose from "mongoose";
 import argon2 from "argon2";
 
+import dotenv from "dotenv";
+
+const env = process.env.NODE_ENV || "development";
+dotenv.config({
+  path: `.env.${env}`,
+});
 
 const connectDb = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI, {
       // useNewUrlParser: true,
     });
-
 
     console.log(" MongoDB connected successfully");
   } catch (error) {

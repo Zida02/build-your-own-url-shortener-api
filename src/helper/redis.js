@@ -1,8 +1,22 @@
 import Redis from "ioredis";
+import dotenv from "dotenv";
+
+const env = process.env.NODE_ENV || "development";
+dotenv.config({
+  path: `.env.${env}`,
+});
+
+
+
+
+
+
+console.log(process.env.REDIS_HOST)
 
 const redisClient = new Redis({
-  host: "127.0.0.1",
-  port: 6379,
+  host: process.env.REDIS_HOST|| "127.0.0.1",
+  port: Number(process.env.REDIS_PORT) || 6379,
+  password: process.env.REDIS_PASSWORD || undefined,
 });
 
 // Event when connected
