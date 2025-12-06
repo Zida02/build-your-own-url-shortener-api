@@ -10,11 +10,14 @@ export const sendMail = async (to, subject, html) => {
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       // ###use in development ##
-      // port: Number(process.env.SMTP_PORT) || 465,
+      port: 587,
       //secure: Number(process.env.SMTP_PORT) === 465, // true only for 465
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
+      },
+      tls: {
+        rejectUnauthorized: false, // allow self-signed certs
       },
     });
 
