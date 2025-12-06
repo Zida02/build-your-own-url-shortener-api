@@ -1,3 +1,16 @@
+process.on("unhandledRejection", (reason, promise) => {
+  logger.error("UNHANDLED REJECTION", {
+    message: reason?.message,
+    stack: reason?.stack,
+  });
+
+  console.error("UNHANDLED REJECTION! Shutting down...");
+  console.error(reason);
+  server.close(() => {
+    process.exit(1); // Close server before exiting
+  });
+});
+
 import express from "express";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
@@ -93,18 +106,6 @@ process.on("uncaughtException", (err) => {
 });
 
 // Handle unhandled promise rejections
-process.on("unhandledRejection", (reason, promise) => {
-  logger.error("UNHANDLED REJECTION", {
-    message: reason?.message,
-    stack: reason?.stack,
-  });
-
-  console.error("UNHANDLED REJECTION! Shutting down...");
-  console.error(reason);
-  server.close(() => {
-    process.exit(1); // Close server before exiting
-  });
-});
 
 // Optional: handle SIGTERM (for Docker or process manager)
 process.on("SIGTERM", (err) => {
