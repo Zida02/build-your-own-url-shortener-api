@@ -66,7 +66,7 @@ lib-cov
 .pnpm-store
 .eslintcache
 .stylelintcache
-.e.md
+e.md
 
 # Debugging artifacts
 *.tgz
