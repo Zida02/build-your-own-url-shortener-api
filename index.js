@@ -1,15 +1,18 @@
-process.on("unhandledRejection", (reason, promise) => {
-  logger.error("UNHANDLED REJECTION", {
-    message: reason?.message,
-    stack: reason?.stack,
+// ===============================================
+// HANDLE UNCAUGHT EXCEPTIONS (must be at the top)
+// ===============================================
+process.on("uncaughtException", (err) => {
+  logger.error("UNCAUGHT EXCEPTION", {
+    message: err.message,
+    stack: err.stack,
   });
 
-  console.error("UNHANDLED REJECTION! Shutting down...");
-  console.error(reason);
-  server.close(() => {
-    process.exit(1); // Close server before exiting
-  });
+  console.error("UNCAUGHT EXCEPTION! Shutting down...");
+  console.error(err);
+
+  process.exit(1); // Crash immediately
 });
+
 
 import express from "express";
 import dotenv from "dotenv";
@@ -94,27 +97,27 @@ const server = app.listen(process.env.PORT || 5050, () => {
 });
 
 // Handle uncaught exceptions
-process.on("uncaughtException", (err) => {
+process.on("unhandledRejection", (reason) => {
   logger.error("UNHANDLED REJECTION", {
-    message: err.message,
-    stack: err.stack,
+    message: reason?.message,
+    stack: reason?.stack,
   });
 
-  console.error("UNCAUGHT EXCEPTION! Shutting down...");
-  console.error(err.name, err.message, err.stack);
-  process.exit(1); // Exit immediately
+  console.error("UNHANDLED REJECTION! Shutting down...");
+  console.error(reason);
+
+  server.close(() => {
+    process.exit(1);
+  });
 });
 
-// Handle unhandled promise rejections
+// ===============================================
+// HANDLE SIGTERM (Docker / PM2)
+// ===============================================
+process.on("SIGTERM", () => {
+  logger.warn("SIGTERM RECEIVED: Closing server gracefully...");
 
-// Optional: handle SIGTERM (for Docker or process manager)
-process.on("SIGTERM", (err) => {
-  logger.error("SIGTERM", {
-    message: "Server  Shuting Down",
-  });
-
-  console.log("SIGTERM received. Shutting down gracefully...");
   server.close(() => {
-    console.log("Process terminated");
+    console.log("Process terminated.");
   });
 });
