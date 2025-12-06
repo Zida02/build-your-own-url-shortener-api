@@ -79,29 +79,29 @@ export const advancedSecurityMiddleware = (app) => {
   // });
 
   // IP Whitelist Middleware (Recommended)
-  app.use((req, res, next) => {
-    // Detect real client IP — works for production, proxy, Docker, Nginx
-    const clientIp =
-      req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
-      req.socket.remoteAddress;
+  // app.use((req, res, next) => {
+  //   // Detect real client IP — works for production, proxy, Docker, Nginx
+  //   const clientIp =
+  //     req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
+  //     req.socket.remoteAddress;
 
     
 
-    const normalizedIp = clientIp.replace("::ffff:", ""); // Fix IPv6 formatting
+  //   const normalizedIp = clientIp.replace("::ffff:", ""); // Fix IPv6 formatting
 
-    if (ipRangeCheck(normalizedIp, allowedIps)) {
-      return next();
-    }
+  //   if (ipRangeCheck(normalizedIp, allowedIps)) {
+  //     return next();
+  //   }
 
-    logger.warn(`Blocked IP: ${normalizedIp}`, {
-      clientIp:clientIp
-    });
+  //   logger.warn(`Blocked IP: ${normalizedIp}`, {
+  //     clientIp:clientIp
+  //   });
 
-    return res.status(403).json({
-      error: "Access denied: IP not allowed",
-      ip: normalizedIp,
-    });
-  });
+  //   return res.status(403).json({
+  //     error: "Access denied: IP not allowed",
+  //     ip: normalizedIp,
+  //   });
+  // });
 
   // Deep XSS sanitization for JSON & URL-encoded payloads
   app.use((req, res, next) => {
