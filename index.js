@@ -13,7 +13,6 @@ process.on("uncaughtException", (err) => {
   process.exit(1); // Crash immediately
 });
 
-
 import express from "express";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
@@ -87,15 +86,6 @@ app.use(errorMiddleware);
 // );
 // // =============DO NOT EDIT HERE===========================================
 
-const server = app.listen(process.env.PORT || 5050, () => {
-  console.log(`Server running on port ${process.env.PORT || 5050}`);
-  logger.info(
-    `🚀 Server started successfully on port ${process.env.PORT || 5050} in ${
-      process.env.NODE_ENV || "development"
-    } mode`
-  );
-});
-
 // Handle uncaught exceptions
 process.on("unhandledRejection", (reason) => {
   logger.error("UNHANDLED REJECTION", {
@@ -120,4 +110,13 @@ process.on("SIGTERM", () => {
   server.close(() => {
     console.log("Process terminated.");
   });
+});
+
+const server = app.listen(process.env.PORT || 5050, () => {
+  console.log(`Server running on port ${process.env.PORT || 5050}`);
+  logger.info(
+    `🚀 Server started successfully on port ${process.env.PORT || 5050} in ${
+      process.env.NODE_ENV || "development"
+    } mode`
+  );
 });
