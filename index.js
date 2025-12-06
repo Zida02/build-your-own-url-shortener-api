@@ -53,23 +53,32 @@ app.use(errorMiddleware);
 
 // =============DO NOT EDIT HERE===========================================
 
-const server = app.listen(
-  process.env.PORT || 5050,
-  process.env.HOST || "0.0.0.0",
-  () => {
-    console.log(
-      `Server running on http://${process.env.HOST || "0.0.0.0"}:${
-        process.env.PORT || 5050
-      }`
-    );
-    logger.info(
-      `🚀 Server started successfully on port ${process.env.PORT || 5050} in ${
-        process.env.NODE_ENV || "development"
-      } mode`
-    );
-  }
-);
-// =============DO NOT EDIT HERE===========================================
+// const server = app.listen(
+//   process.env.PORT || 5050,
+//   process.env.HOST || "0.0.0.0",
+//   () => {
+//     console.log(
+//       `Server running on http://${process.env.HOST || "0.0.0.0"}:${
+//         process.env.PORT || 5050
+//       }`
+//     );
+//     logger.info(
+//       `🚀 Server started successfully on port ${process.env.PORT || 5050} in ${
+//         process.env.NODE_ENV || "development"
+//       } mode`
+//     );
+//   }
+// );
+// // =============DO NOT EDIT HERE===========================================
+
+const server = app.listen(process.env.PORT || 5050, () => {
+  console.log(`Server running on port ${process.env.PORT || 5050}`);
+  logger.info(
+    `🚀 Server started successfully on port ${process.env.PORT || 5050} in ${
+      process.env.NODE_ENV || "development"
+    } mode`
+  );
+});
 
 // Handle uncaught exceptions
 process.on("uncaughtException", (err) => {
