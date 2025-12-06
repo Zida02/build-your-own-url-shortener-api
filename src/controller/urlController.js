@@ -325,7 +325,7 @@ export const deleteExpiredUrls = async (req, res, next) => {
   try {
     const result = await Url.findOneAndDelete({
       user: userId,
-      // expiresAt: { $lte: new Date() },
+      expiresAt: { $lte: new Date() },
       alias: req.params.alias,
     });
 
