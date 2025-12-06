@@ -7,6 +7,7 @@ import mongoSanitize from "express-mongo-sanitize";
 import { JSDOM } from "jsdom";
 import ipRangeCheck from "ip-range-check";
 import createDOMPurify from "dompurify";
+import logger from "../utils/logger.js";
 
 // Create DOMPurify instance
 const window = new JSDOM("").window;
@@ -71,10 +72,31 @@ export const advancedSecurityMiddleware = (app) => {
   app.use(hpp());
 
   // IP whitelist
+  // app.use((req, res, next) => {
+  //   const clientIp = req.ip;
+  //   if (ipRangeCheck(clientIp, allowedIps)) next();
+  //   else res.status(403).json({ error: "Access denied: IP not allowed" });
+  // });
+
+  // IP Whitelist Middleware (Recommended)
   app.use((req, res, next) => {
-    const clientIp = req.ip;
-    if (ipRangeCheck(clientIp, allowedIps)) next();
-    else res.status(403).json({ error: "Access denied: IP not allowed" });
+    // Detect real client IP — works for production, proxy, Docker, Nginx
+    const clientIp =
+      req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
+      req.socket.remoteAddress;
+
+    const normalizedIp = clientIp.replace("::ffff:", ""); // Fix IPv6 formatting
+
+    if (ipRangeCheck(normalizedIp, allowedIps)) {
+      return next();
+    }
+
+    logger.warn(`Blocked IP: ${normalizedIp}`);
+
+    return res.status(403).json({
+      error: "Access denied: IP not allowed",
+      ip: normalizedIp,
+    });
   });
 
   // Deep XSS sanitization for JSON & URL-encoded payloads
