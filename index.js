@@ -13,6 +13,7 @@ import cors from "cors";
 import { advancedSecurityMiddleware } from "./src/middleware/secure.js";
 import { swaggerUiServe, swaggerUiSetup } from "./src/swagger/swagger.js";
 import errorMiddleware from "./src/middleware/errorMiddleware.js";
+import logger from "./src/utils/logger.js";
 import notFoundMiddleware from "./src/middleware/notFoundMiddleware.js";
 
 connectDb();
@@ -43,7 +44,7 @@ app.get("/", (req, res) => {
 //   });
 // });
 
-app.use(notFoundMiddleware)
+app.use(notFoundMiddleware);
 
 app.use(errorMiddleware);
 /**
@@ -52,17 +53,31 @@ app.use(errorMiddleware);
 
 // =============DO NOT EDIT HERE===========================================
 
-app.listen(process.env.PORT || 5050, process.env.HOST || "0.0.0.0", () => {
-  console.log(
-    `Server running on http://${process.env.HOST || "0.0.0.0"}:${
-      process.env.PORT || 5050
-    }`
-  );
-});
+const server = app.listen(
+  process.env.PORT || 5050,
+  process.env.HOST || "0.0.0.0",
+  () => {
+    console.log(
+      `Server running on http://${process.env.HOST || "0.0.0.0"}:${
+        process.env.PORT || 5050
+      }`
+    );
+    logger.info(
+      `🚀 Server started successfully on port ${process.env.PORT || 5050} in ${
+        process.env.NODE_ENV || "development"
+      } mode`
+    );
+  }
+);
 // =============DO NOT EDIT HERE===========================================
 
 // Handle uncaught exceptions
 process.on("uncaughtException", (err) => {
+  logger.error("UNHANDLED REJECTION", {
+    message: err.message,
+    stack: err.stack,
+  });
+
   console.error("UNCAUGHT EXCEPTION! Shutting down...");
   console.error(err.name, err.message, err.stack);
   process.exit(1); // Exit immediately
@@ -70,6 +85,11 @@ process.on("uncaughtException", (err) => {
 
 // Handle unhandled promise rejections
 process.on("unhandledRejection", (reason, promise) => {
+  logger.error("UNHANDLED REJECTION", {
+    message: reason?.message,
+    stack: reason?.stack,
+  });
+
   console.error("UNHANDLED REJECTION! Shutting down...");
   console.error(reason);
   server.close(() => {
@@ -78,7 +98,11 @@ process.on("unhandledRejection", (reason, promise) => {
 });
 
 // Optional: handle SIGTERM (for Docker or process manager)
-process.on("SIGTERM", () => {
+process.on("SIGTERM", (err) => {
+  logger.error("SIGTERM", {
+    message: "Server  Shuting Down",
+  });
+
   console.log("SIGTERM received. Shutting down gracefully...");
   server.close(() => {
     console.log("Process terminated");

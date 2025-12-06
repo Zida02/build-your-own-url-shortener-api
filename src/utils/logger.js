@@ -107,6 +107,20 @@
 
 import winston from "winston";
 import "winston-daily-rotate-file";
+import {Logtail } from "@logtail/node"
+import { LogtailTransport } from "@logtail/winston"
+import dotenv from "dotenv";
+
+
+const env = process.env.NODE_ENV || "development";
+dotenv.config({
+  path: `.env.${env}`,
+});
+
+//BETTERSTACK = nYBJ4NjNyjqPMjZqoUDooRuH;
+const logtail = new Logtail(process.env.BETTERSTACK || "", {
+  endpoint: process.env.BETTERSTACK_ENDPOINT || undefined,
+});
 
 const logFormat = winston.format.combine(
   winston.format.timestamp(),
@@ -134,7 +148,11 @@ const errorLogTransport = new winston.transports.DailyRotateFile({
 const logger = winston.createLogger({
   level: "info",
   format: logFormat,
-  transports: [appLogTransport, errorLogTransport],
+  transports: [
+    appLogTransport,
+    errorLogTransport,
+    new LogtailTransport(logtail),
+  ],
 });
 
 if (process.env.NODE_ENV !== "production") {

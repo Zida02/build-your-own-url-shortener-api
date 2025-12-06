@@ -38,13 +38,13 @@ export const loginUser = async (req, res, next) => {
     //////////////////console.log("checkExistingUser", checkExistingUser.password);
     if (!checkExistingUser) {
       //return res.status(400).json({ message: "Invalid email or password" });
-      throw new AppError(
-        "Invalid email or password",
-        404,
-        ErrorCodes.USER_NOT_FOUND
-      );
+      throw new AppError("User not Found", 404, ErrorCodes.USER_NOT_FOUND);
     }
-    const isMatch = await argon2.verify(checkExistingUser.password, password);
+
+    const isMatch = await argon2.verify(
+      checkExistingUser.password,
+      result.data.password
+    );
 
     if (!isMatch) {
       //return res.status(400).json({ message: "Invalid email or password" });
@@ -92,7 +92,7 @@ export const loginUser = async (req, res, next) => {
   }
 };
 
-export const registerUser = async (req, res) => {
+export const registerUser = async (req, res, next) => {
   const result = registerSchema.safeParse(req.body);
 
   if (!result.success) {
@@ -119,7 +119,7 @@ export const registerUser = async (req, res) => {
     if (checkExistingUsername) {
       //return res.status(400).json({ message: "Username already taken" });
       throw new AppError(
-        "User Already Exit",
+        "Username Already Exists",
         404,
         ErrorCodes.DUPLICATE_RESOURCE
       );
@@ -282,7 +282,7 @@ export const getUserProfile = async (req, res) => {
 //   }
 // };
 
-export const forgotPassword = async (req, res) => {
+export const forgotPassword = async (req, res, next) => {
   const result = UpdateUserSchema.safeParse(req.body);
 
   if (!result.success) {
@@ -305,12 +305,12 @@ export const forgotPassword = async (req, res) => {
     // 2. Generate reset token and assign to user
     const resetToken = user.getResetPasswordToken();
     user.resetPasswordToken = resetToken;
-    await user.save();
+    await user.save(); // save all again
 
     // 3. Create reset URL
     const resetUrl = `${req.protocol}://${req.get(
       "host"
-    )}/api/users/resetpassword/${resetToken}`;
+    )}/api/auth/resetpassword/${resetToken}`;
 
     // 4. Generate email template
     const html = getResetPasswordEmailTemplate(resetUrl, user);
@@ -322,7 +322,7 @@ export const forgotPassword = async (req, res) => {
       message: "Password reset link sent to email",
       status: true,
     });
-  } catch (error) {
+  } catch (err) {
     //console.error("Forgot Password Error:", error);
     // return res.status(500).json({
     //   message: "Server error on forgot password",
@@ -340,44 +340,45 @@ export const forgotPassword = async (req, res) => {
   }
 };
 
-export const forgotPassword2 = async (req, res, next) => {
-  try {
-    const findUser = await User.findOne({ email: req.body.email });
-    if (!findUser) {
-      //return res.status(404).json({ message: "User not Found" });
-      throw new AppError("User not Found", 404, ErrorCodes.USER_NOT_FOUND);
-    }
-    const resetToken = findUser.getResetPasswordToken();
-    findUser.resetPasswordToken = resetToken;
-    await findUser.save();
+// export const forgotPassword2 = async (req, res, next) => {
+//   try {
+//     const findUser = await User.findOne({ email: req.body.email });
+//     if (!findUser) {
+//       //return res.status(404).json({ message: "User not Found" });
+//       throw new AppError("User not Found", 404, ErrorCodes.USER_NOT_FOUND);
+//     }
+//     const resetToken = findUser.getResetPasswordToken();
+//     findUser.resetPasswordToken = resetToken;
+//     await findUser.save();
 
-    // Create reset URL
-    const resetUrl = `${req.protocol}://${req.get(
-      "host"
-    )}/api/users/resetpassword/${resetToken}`;
+//     // Create reset URL
+//     const resetUrl = `${req.protocol}://${req.get(
+//       "host"
+//     )}/api/users/resetpassword/${resetToken}`;
 
-    res.status(200).json({ message: "Password reset link sent", resetUrl });
-  } catch (error) {
-    // return res.status(500).json({
-    //   message: "error occured on Forgot Password",
-    //   status: "false",
-    // });
-    if (!(err instanceof AppError)) {
-      err = new AppError(
-        err.message || "Something went wrong",
-        500,
-        ErrorCodes.INTERNAL_ERROR,
-        false
-      );
-    }
-    next(err);
-  }
-};
+//     res.status(200).json({ message: "Password reset link sent", resetUrl });
+//   } catch (error) {
+//     // return res.status(500).json({
+//     //   message: "error occured on Forgot Password",
+//     //   status: "false",
+//     // });
+//     if (!(err instanceof AppError)) {
+//       err = new AppError(
+//         err.message || "Something went wrong",
+//         500,
+//         ErrorCodes.INTERNAL_ERROR,
+//         false
+//       );
+//     }
+//     next(err);
+//   }
+// };
 
 export const resetPassword = async (req, res) => {
   const token = req.params.resetToken;
   //////////////////console.log("Reset token received:", token);
   const { password } = req.body;
+  //console.log(password)
   try {
     const user = await User.findOne({
       resetPasswordToken: token,
@@ -397,7 +398,9 @@ export const resetPassword = async (req, res) => {
     }
 
     // Set new password
-    user.password = await argon2.hash(password);
+
+    //const hashedPassword = await argon2.hash(password);
+    user.password = password
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
 

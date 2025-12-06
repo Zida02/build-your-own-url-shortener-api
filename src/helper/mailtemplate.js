@@ -1,6 +1,7 @@
 // Reset Password Email Template
 export const getResetPasswordEmailTemplate = (resetUrl, user) => {
-  const name = user?.name || "User";
+  const name = user?.username || "User";
+ // console.log(user)
 
   return `
   <!DOCTYPE html>
