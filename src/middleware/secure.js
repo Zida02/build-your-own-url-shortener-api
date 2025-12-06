@@ -85,13 +85,17 @@ export const advancedSecurityMiddleware = (app) => {
       req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
       req.socket.remoteAddress;
 
+    
+
     const normalizedIp = clientIp.replace("::ffff:", ""); // Fix IPv6 formatting
 
     if (ipRangeCheck(normalizedIp, allowedIps)) {
       return next();
     }
 
-    logger.warn(`Blocked IP: ${normalizedIp}`);
+    logger.warn(`Blocked IP: ${normalizedIp}`, {
+      clientIp:clientIp
+    });
 
     return res.status(403).json({
       error: "Access denied: IP not allowed",
