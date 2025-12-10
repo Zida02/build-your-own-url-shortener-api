@@ -107,10 +107,9 @@
 
 import winston from "winston";
 import "winston-daily-rotate-file";
-import {Logtail } from "@logtail/node"
-import { LogtailTransport } from "@logtail/winston"
+import { Logtail } from "@logtail/node";
+import { LogtailTransport } from "@logtail/winston";
 import dotenv from "dotenv";
-
 
 const env = process.env.NODE_ENV || "development";
 dotenv.config({
@@ -127,31 +126,42 @@ const logFormat = winston.format.combine(
   winston.format.json()
 );
 
-const appLogTransport = new winston.transports.DailyRotateFile({
-  filename: "logs/app-%DATE%.log",
-  datePattern: "YYYY-MM-DD",
-  zippedArchive: true,
-  maxSize: "20m",
-  maxFiles: "30d",
-  level: "info",
-});
+// /**
+//  *  ERROR OCCURED ON APP  TRANSPORT,ON VERCEL  PLATFORM , UPONCREATIONOF LOG / DIRECTOTY
+//  */
+// const appLogTransport = new winston.transports.DailyRotateFile({
+//   filename: "logs/app-%DATE%.log",
+//   datePattern: "YYYY-MM-DD",
+//   zippedArchive: true,
+//   maxSize: "20m",
+//   maxFiles: "30d",
+//   level: "info",
+// });
 
-const errorLogTransport = new winston.transports.DailyRotateFile({
-  filename: "logs/error-%DATE%.log",
-  datePattern: "YYYY-MM-DD",
-  zippedArchive: true,
-  maxSize: "20m",
-  maxFiles: "60d",
-  level: "error",
-});
+// const errorLogTransport = new winston.transports.DailyRotateFile({
+//   filename: "logs/error-%DATE%.log",
+//   datePattern: "YYYY-MM-DD",
+//   zippedArchive: true,
+//   maxSize: "20m",
+//   maxFiles: "60d",
+//   level: "error",
+// });
+
+// const logger = winston.createLogger({
+//   level: "info",
+//   format: logFormat,
+//   transports: [
+//     appLogTransport,
+//     errorLogTransport,
+//     new LogtailTransport(logtail),
+//   ],
+// });
 
 const logger = winston.createLogger({
   level: "info",
   format: logFormat,
   transports: [
-    appLogTransport,
-    errorLogTransport,
-    new LogtailTransport(logtail),
+    new LogtailTransport(logtail), // ONLY remote logs
   ],
 });
 

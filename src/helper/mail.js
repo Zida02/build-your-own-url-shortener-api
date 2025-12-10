@@ -2,7 +2,6 @@ import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import logger from "../utils/logger.js";
 
-
 dotenv.config();
 
 export const sendMail = async (to, subject, html) => {
@@ -11,7 +10,7 @@ export const sendMail = async (to, subject, html) => {
       host: process.env.SMTP_HOST,
       // ###use in development ##
       port: 587,
-      //secure: Number(process.env.SMTP_PORT) === 465, // true only for 465
+      secure: false, // true for 465, false for other ports
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
