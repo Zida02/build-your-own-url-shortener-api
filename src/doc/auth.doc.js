@@ -206,7 +206,7 @@
 /**
  * @swagger
  * /api/auth/logout:
- *   post:
+ *   get:
  *     tags: 
  *       - Authentication
  *     summary: Logout user account

@@ -493,3 +493,48 @@ export const listAllUrl = async (req, res, next) => {
     next(err);
   }
 };
+
+
+export const deleteUrls = async (req, res, next) => {
+  const alias = req.params.alias;
+  const userId = req.user?.userId;
+
+  try {
+    const result = await Url.findOneAndDelete({
+      user: userId,
+      // expiresAt: { $lte: new Date() },
+      alias: req.params.alias,
+    });
+
+    if (!result) {
+      return res.status(404).json({
+        message: "No expired Url Found to delete",
+      });
+    }
+
+    const sendNotification = await Notification({
+      user: req.user.userId,
+      title: "Url Deleted",
+      shortUrl: result.newUrl,
+    });
+
+    return res.status(200).json({
+      message: "Expired Url Deleted",
+      status: "true",
+    });
+  } catch (err) {
+    // return res.status(500).json({
+    //   message: "error occured on Delecting Url",
+    //   status: "false",
+    // });
+    if (!(err instanceof AppError)) {
+      err = new AppError(
+        err.message || "Something went wrong",
+        500,
+        ErrorCodes.INTERNAL_ERROR,
+        false
+      );
+    }
+    next(err);
+  }
+};

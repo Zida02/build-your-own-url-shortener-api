@@ -18,10 +18,10 @@ const servers = [
     url: process.env.SERVER_URL || "http://127.0.0.1:5050",
     description: "Local development server",
   },
-  {
-    url: process.env.STAGING_SERVER_URL || "https://staging.api.yourdomain.com",
-    description: "Staging server",
-  },
+  // {
+  //   url: process.env.STAGING_SERVER_URL || "https://staging.api.yourdomain.com",
+  //   description: "Staging server",
+  // },
   {
     url: process.env.PROD_SERVER_URL || "https://api.yourdomain.com",
     description: "Production server",
