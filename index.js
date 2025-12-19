@@ -52,7 +52,7 @@ app.get("/", (req, res) => {
     enviroment: `You are on  ${process.env.NODE_ENV}  enviroment`,
   });
 });
-app.get("/:shortCode", redirectUrl);
+app.get("/:alias", redirectUrl);
 // app.use((req, res, next) => {
 //   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
 //   res.status(404).json({
