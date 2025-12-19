@@ -53,7 +53,9 @@ const urlSchema = new mongoose.Schema(
 );
 
 urlSchema.pre("validate", async function (next) {
-  const baseUrl = "http://localhost:5050" || process.env.BASEURL;
+ // const baseUrl = "http://localhost:5050" || process.env.BASEURL;
+  const baseUrl = process.env.BASEURL || "http://localhost:5050";
+
 
   // Check if the user has NOT provided a shortCode
   if (!this.alias) {
