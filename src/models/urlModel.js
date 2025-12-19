@@ -1,6 +1,15 @@
 import mongoose from "mongoose";
 import generateShortCode from "../utils/generateShortCode.js";
 
+
+import dotenv from "dotenv";
+
+const env = process.env.NODE_ENV || "development";
+dotenv.config({
+  path: `.env.${env}`,
+});
+
+
 const urlSchema = new mongoose.Schema(
   {
     originalUrl: {
@@ -44,7 +53,7 @@ const urlSchema = new mongoose.Schema(
 );
 
 urlSchema.pre("validate", async function (next) {
-  const baseUrl = "http://localhost:5050";
+  const baseUrl = "http://localhost:5050" || process.env.BASEURL;
 
   // Check if the user has NOT provided a shortCode
   if (!this.alias) {
