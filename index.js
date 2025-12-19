@@ -30,6 +30,7 @@ import { swaggerUiServe, swaggerUiSetup } from "./src/swagger/swagger.js";
 import errorMiddleware from "./src/middleware/errorMiddleware.js";
 import logger from "./src/utils/logger.js";
 import notFoundMiddleware from "./src/middleware/notFoundMiddleware.js";
+import { redirectUrl} from "./controller/urlController.js
 
 connectDb();
 
@@ -38,6 +39,7 @@ app.use(cookieParser());
 
 advancedSecurityMiddleware(app);
 
+app.get("/:shortCode", redirectUrl);
 app.use("/api/auth", userRouter);
 app.use("/api/url", urlRouter);
 app.use("/api/notifications", notificationRouter);
